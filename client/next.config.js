@@ -1,26 +1,58 @@
-const withCss = require("@zeit/next-css");
-const withPlugins = require("next-compose-plugins");
-const TsConfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const withCss = require('@zeit/next-css');
+const withLess = require('@zeit/next-less');
+const withImages = require('next-images');
+const withBundleAnalyzer = require('@zeit/next-bundle-analyzer');
 
-const nextConfig = {
-  webpack: config => {
-    if (config.resolve.plugins) {
-      config.resolve.plugins.push(new TsConfigPathsPlugin());
-    } else {
-      config.resolve.plugins = [new TsConfigPathsPlugin()];
-    }
+if (typeof require !== 'undefined') {
+    require.extensions['.css'] = file => {};
+}
+module.exports = withBundleAnalyzer(
+    withLess(
+        withCss(
+            withImages({
+                lessLoaderOptions: {
+                    javascriptEnabled: true,
+                },
+                analyzeBrowser: ['browser', 'both'].includes(process.env.BUNDLE_ANALYZE),
+                bundleAnalyzerConfig: {
+                    server: {
+                        analyzerMode: 'static',
+                        reportFilename: '../bundles/server.html',
+                    },
+                    browser: {
+                        analyzerMode: 'static',
+                        reportFilename: '../bundles/client.html',
+                    },
+                },
+                inlineImageLimit: 1,
+                webpack: (config, { isServer }) => {
+                    if (isServer) {
+                        const antStyles = /antd\/.*?\/style\/css.*?/;
+                        const origExternals = [...config.externals];
+                        config.externals = [
+                            // eslint-disable-line
+                            (context, request, callback) => {
+                                // eslint-disable-line
+                                if (request.match(antStyles)) return callback();
+                                if (typeof origExternals[0] === 'function') {
+                                    origExternals[0](context, request, callback);
+                                } else {
+                                    callback();
+                                }
+                            },
+                            ...(typeof origExternals[0] === 'function'
+                                ? []
+                                : origExternals),
+                        ];
 
-    return config;
-  },
-  serverRuntimeConfig: {
-    // Will only be available on the server side
-    mySecret: "secret"
-  },
-  env: {
-    // Will be available on both server and client
-    API_URL: process.env.REACT_APP_SERVICE_URL
-  }
-};
-
-// next.config.js
-module.exports = withPlugins([withCss], nextConfig);
+                        config.module.rules.unshift({
+                            test: antStyles,
+                            use: 'null-loader',
+                        });
+                    }
+                    return config;
+                },
+            })
+        )
+    )
+);

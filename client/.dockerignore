@@ -1,3 +1,7 @@
-.next/
-node_modules/
-Dockerfile*
+node_modules
+.next
+*.pyc
+.scannerwork
+docker/tests
+docker/mock_server
+logs

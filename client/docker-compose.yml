@@ -1,0 +1,73 @@
+version: '3.4'
+
+services:
+    base:
+        build:
+            context: .
+            args:
+                NODE_ENV: production
+                VERSION: $IMAGE_TAG
+        image: registry.appannie.org/appannie/aa-admin-inv:$IMAGE_TAG
+
+    builder:
+        build:
+            context: .
+            target: builder
+            args:
+                NODE_ENV: production
+                VERSION: $IMAGE_TAG
+        image: registry.appannie.org/appannie/aa-admin-inv-builder:$IMAGE_TAG
+
+    next:
+        build:
+            context: .
+            target: dev
+        image: registry.appannie.org/appannie/aa-admin-inv/aa-admin-inv-dev:$IMAGE_TAG
+        expose:
+            - '3000'
+        ports:
+            - '444:3444'
+        volumes:
+            - ./logs:/service/aa-admin-inv/logs
+            - ~/Library/Caches/Yarn/v4:/usr/local/share/.cache/yarn/v4
+            - type: tmpfs
+              target: /tmp
+        environment:
+            - NODE_ENV=$NODE_ENV
+            - PROXY_SERVER=http://0.0.0.0:3000
+            - AA_DJANGO_SERVER=$AA_DJANGO_SERVER
+            - API_V2_SERVER=$API_V2_SERVER
+            - NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY
+            - SERVER_SENTRY=$SERVER_SENTRY
+            - GTM_ID=GTM-PF7D8H
+            - LOG_LEVEL=info
+            - NODE_OPTIONS=--max-old-space-size=4096
+        command: ['bin/dev.js']
+
+    next_dev:
+        build:
+            context: .
+            target: dev
+        expose:
+            - '3000'
+        ports:
+            - '444:3444'
+            - '9229:9229'
+        volumes:
+            - .:/service/aa-admin-inv
+            - ~/Library/Caches/Yarn/v4:/usr/local/share/.cache/yarn/v4
+        environment:
+            - NODE_ENV=$NODE_ENV
+            - MOCK_PRODUCTION=$MOCK_PRODUCTION
+            - PROXY_SERVER=http://0.0.0.0:3000
+            - DEFAULT_TIMEOUT=10000
+            - AA_DJANGO_SERVER=$AA_DJANGO_SERVER
+            - API_V2_SERVER=$API_V2_SERVER
+            - NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY
+            - NEW_RELIC_ENABLED=false
+            - GTM_ID=GTM-PF7D8H
+            - LOG_LEVEL=info
+            - CLIENT_SENTRY=https://a30ad7764b3e41408c2f72566f8222c9@sentry.smart-sense.org/57
+            - SERVER_SENTRY=https://a30ad7764b3e41408c2f72566f8222c9:c97f2afc4fb942ae825d814863be3cb4@sentry.smart-sense.org/57
+            - UV_THREADPOOL_SIZE=128
+        command: ['bin/dev.js']

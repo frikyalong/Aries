@@ -1,0 +1,7 @@
+mock_server
+node_modules
+flow-typed
+coverage
+.npm
+.next
+.flow-typed

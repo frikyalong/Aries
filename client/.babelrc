@@ -1,0 +1,37 @@
+{
+    "presets": ["next/babel"],
+    "plugins": [
+        [
+            "import",
+            {
+                "libraryName": "antd",
+                "style": "css"
+            }
+        ],
+        [
+            "styled-components",
+            {
+                "ssr": true,
+                "preprocess": false
+            }
+        ],
+        [
+            "inline-react-svg",
+            {
+                "svgo": {
+                    "plugins": [
+                      { "removeAttrs": { "attrs": "(data-name)|(width)|(height)" } },
+                      { "cleanupIDs": true }
+                    ]
+                  }
+            }
+        ],
+        [
+            "module-resolver",
+            {
+                "root": ["."],
+                "cwd": "babelrc"
+            }
+        ]
+    ]
+}
